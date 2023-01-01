@@ -24,23 +24,12 @@ return {
 
 
     receive = function(protocol, timeout)
-        local msg = ws.receive(timeout)
-        print(msg)
-        local obj = json.decode(msg)
-        print(obj)
-        local func = load(obj.func)
-        print(func)
-        local decoded = func()
-        print(decoded)
-
-        if decoded.to == id or decoded.to == "all" then
-            if protocol then
-                if decoded.protocol == protocol then
-                    return decoded.from, decoded.message, decoded.protocol
-                end
-            else
-                return decoded.from, decoded.message, decoded.protocol
-            end
-        end
+        repeat
+            local msg = ws.receive(timeout)
+            local obj = json.decode(msg)
+            local func = load("return "..obj.func)
+            decoded = func()
+        until (decoded.to == id or decoded.to == "all") and ((protocol and decoded.protocol == protocol) or not protocol)
+        return decoded.from, decoded.message, decoded.protocol
     end,
 }
