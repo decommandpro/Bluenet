@@ -12,7 +12,7 @@ return {
 
 
     send = function(receiveId, msg, protocol)
-        local message = {from = id, to = receiveId, protocol = protocol, message = msg}
+        local message = {from = '\"'..id..'\"', to = '\"'..receiveId..'\"', protocol = protocol, message = msg}
         ws.send(message)
     end,
 
@@ -29,7 +29,16 @@ return {
             local obj = json.decode(msg)
             local func = load("return "..obj.func)
             decoded = func()
-        until (decoded.to == id or decoded.to == "all") and ((protocol and decoded.protocol == protocol) or not protocol)
-        return decoded.from, decoded.message, decoded.protocol
+
+            if decoded.to == id then
+                if protocol then
+                    if protocol == decoded.protocol then
+                        return decoded.from, decoded.message, decoded.protocol
+                    end
+                else
+                    return decoded.from, decoded.message, decoded.protocol
+                end
+            end
+        until false
     end,
 }
