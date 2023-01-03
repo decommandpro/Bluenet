@@ -11,26 +11,32 @@ return {
     end,
 
 
+    close = function()
+        ws.close()
+    end,
+    
+
     send = function(receiveId, msg, protocol)
-        local message = {from = '\"'..id..'\"', to = '\"'..receiveId..'\"', protocol = protocol, message = msg}
-        ws.send(message)
+        local message = {from = id, to = receiveId, protocol = protocol, message = msg}
+        local encoded = json.encode(message)
+        ws.send(encoded)
     end,
 
 
     broadcast = function(msg, protocol)
         local message = {from = id, to = "all", protocol = protocol, message = msg}
-        ws.send(message)
+        local encoded = json.encode(message)
+        ws.send(encoded)
     end,
 
 
     receive = function(protocol, timeout)
-        repeat
+        while true do
             local msg = ws.receive(timeout)
-            local obj = json.decode(msg)
-            local func = load("return "..obj.func)
-            decoded = func()
+            local obj = json.parseObject(msg)
+            local decoded = json.parseObject(obj.func)
 
-            if decoded.to == id then
+            if decoded.to == id or decoded.to == "all" then
                 if protocol then
                     if protocol == decoded.protocol then
                         return decoded.from, decoded.message, decoded.protocol
@@ -39,6 +45,6 @@ return {
                     return decoded.from, decoded.message, decoded.protocol
                 end
             end
-        until false
+        end
     end,
 }
