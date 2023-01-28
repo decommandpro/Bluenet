@@ -1,5 +1,22 @@
 {
     "Lua.diagnostics.globals": [
-        "decoded"
+        "decoded",
+        "http",
+        "json",
+        "decodeFromFile",
+        "decode",
+        "parseValue",
+        "parseMember",
+        "parseObject",
+        "parseArray",
+        "parseString",
+        "parseNumber",
+        "parseNull",
+        "parseBoolean",
+        "encode",
+        "encodePretty",
+        "removeWhite",
+        "t",
+        "fs"
     ]
 }

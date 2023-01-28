@@ -1,11 +1,11 @@
 os.loadAPI("json")
-local ws, err = http.websocket("ws://localhost:8081")
-local id = math.random(1000, 10000)
+local ws, err
+local id
 return {
     open = function(url, newId)
         ws, err = http.websocket(url)
         if not ws then
-            error("Cant connect to specified websocket")
+            error(err)
         end
         id = newId
     end,
