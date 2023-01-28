@@ -1,3 +1,5 @@
+console.log("Starting Server")
+
 const WebS = require("ws")
 const wss = new WebS.Server({port:8081})
 
