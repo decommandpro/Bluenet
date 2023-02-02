@@ -14,7 +14,7 @@ const wss = new WebS.Server({port:8081})
 wss.on("connection", function connection(ws, req) {
     console.log("New Connection From: " + req.socket.remoteAddress)
     ws.on("message",msg=>{
-        console.log(JSON.stringify({func:msg.toString()}))
+        console.log("New Message: " + JSON.stringify({func:msg.toString()}))
         wss.broadcast(JSON.stringify({func:msg.toString()}))
     })
 });
