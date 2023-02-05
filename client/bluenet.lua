@@ -58,15 +58,18 @@ return {
             end
 
             local msg = ws.receive(0.1)
-            local obj = json.parseObject(msg)
-            local decoded = json.parseObject(obj.func)
 
-            if decoded.to == id or decoded.to == "all" then
-                if not protocol then
-                    return decoded.from, decoded.message, decoded.protocol
-                end
-                if protocol == decoded.protocol then
-                    return decoded.from, decoded.message, decoded.protocol
+            if msg then
+                local obj = json.parseObject(msg)
+                local decoded = json.parseObject(obj.func)
+
+                if decoded.to == id or decoded.to == "all" then
+                    if not protocol then
+                        return decoded.from, decoded.message, decoded.protocol
+                    end
+                    if protocol == decoded.protocol then
+                        return decoded.from, decoded.message, decoded.protocol
+                    end
                 end
             end
         end

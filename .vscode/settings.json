@@ -18,5 +18,8 @@
         "removeWhite",
         "t",
         "fs"
+    ],
+    "Lua.diagnostics.disable": [
+        "undefined-field"
     ]
 }
