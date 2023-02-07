@@ -1,5 +1,15 @@
 {
   "dependencies": {
     "ws": "^8.12.0"
-  }
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "bluenet-server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "devDependencies": {},
+  "author": "decommandpro",
+  "license": "ISC",
+  "description": ""
 }
