@@ -264,8 +264,7 @@ return {
             local msg = ws.receive(0.1)
 
             if msg then
-                local obj = json.parseObject(msg)
-                local decoded = json.parseObject(obj.func)
+                local decoded = json.parseObject(msg)
 
                 if decoded.to == id or decoded.to == "all" then
                     if not protocol then
