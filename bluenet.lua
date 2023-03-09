@@ -236,7 +236,7 @@ return {
             error("No Websocket Opened")
         end
         local message = {from = id, to = receiveId, protocol = protocol, message = msg}
-        local encoded = json.encode(message)
+        local encoded = encode(message)
         ws.send(encoded)
     end,
 
@@ -246,7 +246,7 @@ return {
             error("No Websocket Opened")
         end
         local message = {from = id, to = "all", protocol = protocol, message = msg}
-        local encoded = json.encode(message)
+        local encoded = encode(message)
         ws.send(encoded)
     end,
 
@@ -264,7 +264,7 @@ return {
             local msg = ws.receive(0.1)
 
             if msg then
-                local decoded = json.parseObject(msg)
+                local decoded = parseObject(msg)
 
                 if decoded.to == id or decoded.to == "all" then
                     if not protocol then
