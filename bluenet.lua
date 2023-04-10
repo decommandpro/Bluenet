@@ -203,15 +203,34 @@ end
 
 -- JSON PARSER END --
 
-local ws, err
-local id = ""
+function ping(ws)
+    ws.send("ping")
+    local msg = ws.receive(10)
+    if msg == "pong" then return true else return false end
+end
+
+function connect(newUrl)
+    local ws = http.websocket(newUrl)
+    if not ws then
+        error(err)
+    end
+    return ws
+end
+
+local ws, err, id, url
+
 return {
-    open = function(url, newId)
-        ws, err = http.websocket(url)
-        if not ws then
-            error(err)
-        end
+
+
+    isOpen = function()
+        return ping(ws)
+    end,
+
+
+    open = function(newUrl, newId)
+        ws = connect(newUrl)
         id = newId
+        url = newUrl
     end,
 
 
@@ -221,20 +240,13 @@ return {
         end
         ws.close()
     end,
-    
-
-    isOpen = function()
-        if ws then
-            return true
-        end
-        return false
-    end,
 
 
     send = function(receiveId, msg, protocol)
         if not ws then
             error("No Websocket Opened")
         end
+        if not ping(ws) then ws.close() connect(url) end
         local message = {from = id, to = receiveId, protocol = protocol, message = msg}
         local encoded = encode(message)
         ws.send(encoded)
@@ -245,6 +257,7 @@ return {
         if not ws then
             error("No Websocket Opened")
         end
+        if not ping(ws) then ws.close() connect(url) end
         local message = {from = id, to = "all", protocol = protocol, message = msg}
         local encoded = encode(message)
         ws.send(encoded)
@@ -253,28 +266,36 @@ return {
 
     receive = function(protocol, timeout)
         local duration = 0
-        while true do
-            if timeout then
-                if duration >= timeout*10 then
-                    break
-                end
-                duration = duration + 1
-            end
 
-            local msg = ws.receive(0.1)
-
-            if msg then
-                local decoded = parseObject(msg)
-
-                if decoded.to == id or decoded.to == "all" then
-                    if not protocol then
-                        return decoded.from, decoded.message, decoded.protocol
+        paralell.waitForAny(function()
+            while true do
+                if timeout then
+                    if duration >= timeout*10 then
+                        break
                     end
-                    if protocol == decoded.protocol then
-                        return decoded.from, decoded.message, decoded.protocol
+                    duration = duration + 1
+                end
+
+                local msg = ws.receive(0.1)
+
+               if msg then
+                    local decoded = parseObject(msg)
+
+                    if decoded.to == id or decoded.to == "all" then
+                        if not protocol then
+                            return decoded.from, decoded.message, decoded.protocol
+                        end
+                        if protocol == decoded.protocol then
+                            return decoded.from, decoded.message, decoded.protocol
+                        end
                     end
                 end
             end
-        end
+        end, function()
+            while true do
+                sleep(3)
+                if not ping(ws) then ws.close() connect(url) end
+            end
+        end)
     end,
 }
