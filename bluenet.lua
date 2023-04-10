@@ -278,7 +278,7 @@ return {
 
                 local msg = ws.receive(0.1)
 
-               if msg and not msg == "pong" then
+               if msg and not (msg == "pong") then
                     local decoded = parseObject(msg)
 
                     if decoded.to == id or decoded.to == "all" then
