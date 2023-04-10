@@ -1,7 +1,14 @@
 -- JSON PARSER BEGIN --
 
-local controls = { ["\n"] = "\\n",["\r"] = "\\r",["\t"] = "\\t",["\b"] = "\\b",["\f"] = "\\f",["\""] = "\\\"",
-	["\\"] = "\\\\" }
+local controls = {
+	["\n"] = "\\n",
+	["\r"] = "\\r",
+	["\t"] = "\\t",
+	["\b"] = "\\b",
+	["\f"] = "\\f",
+	["\""] = "\\\"",
+	["\\"] = "\\\\"
+}
 
 local function isArray(t)
 	local max = 0
@@ -276,9 +283,8 @@ return {
 				local msg = ws.receive(0.1)
 
 				if msg and not (msg == "pong") then
-					print(msg)
 					local decoded = parseObject(msg)
-					print(decoded)
+
 					if decoded.to == id or decoded.to == "all" then
 						if not protocol then
 							outFrom = decoded.from
