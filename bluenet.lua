@@ -267,7 +267,7 @@ return {
     receive = function(protocol, timeout)
         local duration = 0
 
-        paralell.waitForAny(function()
+        parallel.waitForAny(function()
             while true do
                 if timeout then
                     if duration >= timeout*10 then
@@ -278,7 +278,7 @@ return {
 
                 local msg = ws.receive(0.1)
 
-               if msg and not (msg == "pong") then
+               if msg and not msg == "pong" then
                     local decoded = parseObject(msg)
 
                     if decoded.to == id or decoded.to == "all" then
