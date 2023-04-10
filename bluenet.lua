@@ -1,10 +1,11 @@
 -- JSON PARSER BEGIN --
 
-local controls = {["\n"]="\\n", ["\r"]="\\r", ["\t"]="\\t", ["\b"]="\\b", ["\f"]="\\f", ["\""]="\\\"", ["\\"]="\\\\"}
+local controls = { ["\n"] = "\\n",["\r"] = "\\r",["\t"] = "\\t",["\b"] = "\\b",["\f"] = "\\f",["\""] = "\\\"",
+	["\\"] = "\\\\" }
 
 local function isArray(t)
 	local max = 0
-	for k,v in pairs(t) do
+	for k, v in pairs(t) do
 		if type(k) ~= "number" then
 			return false
 		elseif k > max then
@@ -14,7 +15,7 @@ local function isArray(t)
 	return max == #t
 end
 
-local whites = {['\n']=true; ['\r']=true; ['\t']=true; [' ']=true; [',']=true; [':']=true}
+local whites = { ['\n'] = true,['\r'] = true,['\t'] = true,[' '] = true,[','] = true,[':'] = true }
 function removeWhite(str)
 	while whites[str:sub(1, 1)] do
 		str = str:sub(2)
@@ -35,9 +36,9 @@ local function encodeCommon(val, pretty, tabLevel, tTracking)
 			str = str .. "\n"
 			tabLevel = tabLevel + 1
 		end
-		for k,v in iterator(val) do
+		for k, v in iterator(val) do
 			tab("")
-			loopFunc(k,v)
+			loopFunc(k, v)
 			str = str .. ","
 			if pretty then str = str .. "\n" end
 		end
@@ -56,11 +57,11 @@ local function encodeCommon(val, pretty, tabLevel, tTracking)
 		assert(not tTracking[val], "Cannot encode a table holding itself recursively")
 		tTracking[val] = true
 		if isArray(val) then
-			arrEncoding(val, "[", "]", ipairs, function(k,v)
+			arrEncoding(val, "[", "]", ipairs, function(k, v)
 				str = str .. encodeCommon(v, pretty, tabLevel, tTracking)
 			end)
 		else
-			arrEncoding(val, "{", "}", pairs, function(k,v)
+			arrEncoding(val, "{", "}", pairs, function(k, v)
 				assert(type(k) == "string", "JSON object keys must be strings", 2)
 				str = str .. encodeCommon(k, pretty, tabLevel, tTracking)
 				str = str .. (pretty and ": " or ":") .. encodeCommon(v, pretty, tabLevel, tTracking)
@@ -85,7 +86,7 @@ function encodePretty(val)
 end
 
 local decodeControls = {}
-for k,v in pairs(controls) do
+for k, v in pairs(controls) do
 	decodeControls[v] = k
 end
 
@@ -101,7 +102,7 @@ function parseNull(str)
 	return nil, removeWhite(str:sub(5))
 end
 
-local numChars = {['e']=true; ['E']=true; ['+']=true; ['-']=true; ['.']=true}
+local numChars = { ['e'] = true,['E'] = true,['+'] = true,['-'] = true,['.'] = true }
 function parseNumber(str)
 	local i = 1
 	while numChars[str:sub(i, i)] or tonumber(str:sub(i, i)) do
@@ -115,16 +116,16 @@ end
 function parseString(str)
 	str = str:sub(2)
 	local s = ""
-	while str:sub(1,1) ~= "\"" do
-		local next = str:sub(1,1)
+	while str:sub(1, 1) ~= "\"" do
+		local next = str:sub(1, 1)
 		str = str:sub(2)
 		assert(next ~= "\n", "Unclosed string")
 
 		if next == "\\" then
-			local escape = str:sub(1,1)
+			local escape = str:sub(1, 1)
 			str = str:sub(2)
 
-			next = assert(decodeControls[next..escape], "Invalid escape character")
+			next = assert(decodeControls[next .. escape], "Invalid escape character")
 		end
 
 		s = s .. next
@@ -204,98 +205,105 @@ end
 -- JSON PARSER END --
 
 function ping(ws)
-    ws.send("ping")
-    local msg = ws.receive(10)
-    if msg == "pong" then return true else return false end
+	ws.send("ping")
+	local msg = ws.receive(10)
+	if msg == "pong" then return true else return false end
 end
 
 function connect(newUrl)
-    local ws = http.websocket(newUrl)
-    if not ws then
-        error(err)
-    end
-    return ws
+	local ws = http.websocket(newUrl)
+	if not ws then
+		error(err)
+	end
+	return ws
 end
 
 local ws, err, id, url
 
 return {
+	isOpen = function()
+		return ping(ws)
+	end,
+	open = function(newUrl, newId)
+		ws = connect(newUrl)
+		id = newId
+		url = newUrl
+	end,
+	close = function()
+		if not ws then
+			error("No Websocket Opened")
+		end
+		ws.close()
+	end,
+	send = function(receiveId, msg, protocol)
+		if not ws then
+			error("No Websocket Opened")
+		end
+		if not ping(ws) then
+			ws.close()
+			connect(url)
+		end
+		local message = { from = id, to = receiveId, protocol = protocol, message = msg }
+		local encoded = encode(message)
+		ws.send(encoded)
+	end,
+	broadcast = function(msg, protocol)
+		if not ws then
+			error("No Websocket Opened")
+		end
+		if not ping(ws) then
+			ws.close()
+			connect(url)
+		end
+		local message = { from = id, to = "all", protocol = protocol, message = msg }
+		local encoded = encode(message)
+		ws.send(encoded)
+	end,
+	receive = function(protocol, timeout)
+		local duration = 0
 
+		local outFrom, outMessage, outProtocol
 
-    isOpen = function()
-        return ping(ws)
-    end,
+		parallel.waitForAny(function()
+			while true do
+				if timeout then
+					if duration >= timeout * 10 then
+						break
+					end
+					duration = duration + 1
+				end
 
+				local msg = ws.receive(0.1)
 
-    open = function(newUrl, newId)
-        ws = connect(newUrl)
-        id = newId
-        url = newUrl
-    end,
-
-
-    close = function()
-        if not ws then
-            error("No Websocket Opened")
-        end
-        ws.close()
-    end,
-
-
-    send = function(receiveId, msg, protocol)
-        if not ws then
-            error("No Websocket Opened")
-        end
-        if not ping(ws) then ws.close() connect(url) end
-        local message = {from = id, to = receiveId, protocol = protocol, message = msg}
-        local encoded = encode(message)
-        ws.send(encoded)
-    end,
-
-
-    broadcast = function(msg, protocol)
-        if not ws then
-            error("No Websocket Opened")
-        end
-        if not ping(ws) then ws.close() connect(url) end
-        local message = {from = id, to = "all", protocol = protocol, message = msg}
-        local encoded = encode(message)
-        ws.send(encoded)
-    end,
-
-
-    receive = function(protocol, timeout)
-        local duration = 0
-
-        parallel.waitForAny(function()
-            while true do
-                if timeout then
-                    if duration >= timeout*10 then
-                        break
-                    end
-                    duration = duration + 1
-                end
-
-                local msg = ws.receive(0.1)
-
-               if msg and not (msg == "pong") then
-                    local decoded = parseObject(msg)
-
-                    if decoded.to == id or decoded.to == "all" then
-                        if not protocol then
-                            return decoded.from, decoded.message, decoded.protocol
-                        end
-                        if protocol == decoded.protocol then
-                            return decoded.from, decoded.message, decoded.protocol
-                        end
-                    end
-                end
-            end
-        end, function()
-            while true do
-                sleep(3)
-                if not ping(ws) then ws.close() connect(url) end
-            end
-        end)
-    end,
+				if msg and not (msg == "pong") then
+					print(msg)
+					local decoded = parseObject(msg)
+					print(decoded)
+					if decoded.to == id or decoded.to == "all" then
+						if not protocol then
+							outFrom = decoded.from
+							outMessage = decoded.message
+							outProtocol = decoded.protocol
+							return
+						end
+						if protocol == decoded.protocol then
+							outFrom = decoded.from
+							outMessage = decoded.message
+							outProtocol = decoded.protocol
+							return
+						end
+					end
+				end
+			end
+		end, function()
+			while true do
+				sleep(3)
+				if not ping(ws) then
+					ws.close()
+					connect(url)
+				end
+			end
+		end)
+		return outFrom, outMessage, outProtocol
+	end,
 }
