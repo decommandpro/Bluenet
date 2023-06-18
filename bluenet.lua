@@ -213,8 +213,18 @@ end
 
 function ping(ws)
 	ws.send("ping")
-	local msg = ws.receive(10)
-	if msg == "pong" then return true else return false end
+    local duration = 0
+    local timeout = 10
+    while true do
+        if duration >= timeout * 10 then
+            return false
+        end
+        duration = duration + 1
+
+        local msg = ws.receive(0.1)
+
+        if msg == "pong" then return true end
+    end
 end
 
 function connect(newUrl)
@@ -305,6 +315,7 @@ return {
 			while true do
 				sleep(3)
 				if not ping(ws) then
+                    print("reconnecting")
 					ws.close()
 					connect(url)
 				end
